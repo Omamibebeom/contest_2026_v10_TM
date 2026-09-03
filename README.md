@@ -68,7 +68,7 @@ script 端：`socket_open` → `socket_sendline("GET")` → `socket_read_string(
 
 - 腳位 BCM：R1 R2 R3 R4 = 17 27 22 23；ready = 26（`PUD_DOWN`，浮接讀 0）；繼電器低電位吸合（`INVERSE_LOGIC=True`）。
 - 成功：先擺 R2 R3 R4 → 1 秒 → R1 拉高 → 保持 `HOLD_SEC`(7) 秒 → 全關。R1 是「資料已備妥」旗子。
-- 失敗：R1 不拉高，R2 R3 R4 = `FAIL_CODE`(0,1,1) 保持 `FAIL_HOLD_SEC`(10) 秒；手臂端是「等 DI0 逾時後再讀 DI1~DI3 = 0 1 1」，所以保持時間必須比手臂的逾時長。
+- 失敗：R1 不拉高，R2 R3 R4 = `FAIL_CODE`(1,1,1) 保持 `FAIL_HOLD_SEC`(10) 秒；手臂端是「等 DI0 逾時後再讀 DI1~DI3 = 1 1 1」，所以保持時間必須比手臂的逾時長。
 - 非樹莓派自動模擬（只印字）。新版 Raspberry Pi OS 要用 `rpi-lgpio`（requirements_pi.txt），裝到原版 RPi.GPIO 會在 `GPIO.setmode` 丟 RuntimeError。
 
 ## 6. 網路設定（達明）

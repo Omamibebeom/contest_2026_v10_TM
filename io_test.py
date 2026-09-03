@@ -42,6 +42,8 @@ def main():
         return
 
     last = "-"
+    # 先用 WINDOW_NORMAL 建視窗, 使用者才能拖邊框改大小 (直接 imshow 會變成不能改的 AUTOSIZE)
+    cv2.namedWindow("io_test", cv2.WINDOW_NORMAL)
     try:
         while True:
             ok, frame = cap.read()

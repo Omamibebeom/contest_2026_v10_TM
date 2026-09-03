@@ -67,6 +67,10 @@ def main():
     locked_px = None            # 鎖定的像素; 非 None 時凍結偵測
     last_mask = None
     win = "affine_sample (SPACE=lock, c=enter X,Y)"
+    # 兩個視窗都要先用 WINDOW_NORMAL 建好: 沒有 namedWindow 就直接 imshow 會變成 WINDOW_AUTOSIZE,
+    # 那種視窗大小被圖片鎖死, 使用者拖邊框也改不了
+    cv2.namedWindow(win, cv2.WINDOW_NORMAL)
+    cv2.namedWindow("mask", cv2.WINDOW_NORMAL)
 
     while True:
         ok, frame = cap.read()

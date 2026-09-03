@@ -1,5 +1,7 @@
 """
 main_contest.py —— 比賽主程式 (跑在樹莓派)
+
+兩個通道 (一句話: a 是「這是什麼顏色」, b 是「這個顏色在哪裡」):
   a 通道 (放置板):        手臂從放置板夾起指定物件、舉到鏡頭前 → 程式辨識顏色
                           → 用 IO 訊號告訴手臂是哪個顏色 → 手臂決定放到哪一區
   b 通道 (隨機位置放置板): 程式開場拍快照, 算出每件物件的手臂座標 → 手臂送 GET
@@ -196,6 +198,9 @@ def main():
         print(f"[main] === 階段二: 可以按手臂了 ({arm_link.HOST}:{arm_link.PORT})"
               + ("  [練習模式]" if args.practice else "") + " ===")
 
+        if not args.no_ui:
+            # 先用 WINDOW_NORMAL 建視窗, 使用者才能拖邊框改大小 (直接 imshow 會變成不能改的 AUTOSIZE)
+            cv2.namedWindow("contest", cv2.WINDOW_NORMAL)
         running = True
         while running:
             ok, frame = cap.read()
