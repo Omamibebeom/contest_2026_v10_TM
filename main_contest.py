@@ -139,7 +139,7 @@ class ChannelB:
                 if s["color"] == color and not s["served"]:
                     s["served"] = True
                     print(f"[b] 給 {color} → 手臂({s['x']:.1f},{s['y']:.1f})")
-                    return arm_link.reply_target(s["x"], s["y"], color)
+                    return arm_link.reply_target(s["x"], s["y"])   # 只回座標, 不回顏色
             print(f"[b] 沒有還沒給過的 '{color}' → NONE")
             return arm_link.REPLY_NONE
         if cmd == arm_link.CMD_SCAN:

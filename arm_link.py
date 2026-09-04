@@ -3,7 +3,7 @@ arm_link.py —— 和機械手臂講話的模組 (換手臂只改這一支)
 
 現在的手臂 (達明 TM, 大會 script tm-flow-v1) 是這樣講話的:
   手臂當客戶端, 連到樹莓派的 5000 埠
-  手臂送 "GET" + 換行        → 我們回 "$x,y,color" + 換行
+  手臂送 "GET" + 換行        → 我們回 "$x,y" + 換行 (手臂座標, 單位 mm)
   沒有可以給的               → 回 "$NONE"
   其他句子: SCAN / GRIP / RELEASE / RESET / QUIT (主程式決定回什麼)
 
@@ -28,9 +28,10 @@ REPLY_BYE = "$BYE"
 REPLY_NONE = "$NONE"
 
 
-def reply_target(x, y, color):
-    """一件物件的手臂座標, 例: $487.5,0.0,red"""
-    return f"${x:.1f},{y:.1f},{color}"
+def reply_target(x, y):
+    """一件物件的手臂座標, 例: $487.5,0.0
+    不回顏色: 顏色只是樹莓派用來找中心點的依據, 手臂照 PICK_ORDER 的順序就知道第幾件是什麼。"""
+    return f"${x:.1f},{y:.1f}"
 
 
 def reply_count(n):

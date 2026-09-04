@@ -17,7 +17,7 @@ import cv2
 import camera_config as cam
 from color_detect import load_profiles, detect_with_profiles
 
-PROFILES_FILE = "vision_profiles.json"  # vision_tuner.py 按 b 存的各色 HSV
+PROFILES_FILE = "vision_profiles.json"  # vision_tuner.py 按 s 存的各色 HSV
 
 
 def _ask_arm_xy():
@@ -54,7 +54,7 @@ def main():
         print(f"[sample] 已載入 {PROFILES_FILE}: "
               f"{', '.join(p.name for p in profiles)} (任一件 b 物件都可當基準)")
     except Exception:
-        print(f"[sample] 找不到 {PROFILES_FILE} → 先跑 vision_tuner.py 按 b 建 profile")
+        print(f"[sample] 找不到 {PROFILES_FILE} → 先跑 vision_tuner.py 按 s 存 profile")
         return
 
     cap = cam.open_camera()
