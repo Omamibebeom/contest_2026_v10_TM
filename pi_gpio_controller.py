@@ -28,7 +28,7 @@ FAIL_HOLD_SEC = 10           # 失敗碼保持幾秒 (要比手臂等 R1 的逾�
 
 RELAY_PINS = [17, 27, 22, 23]   # R1 R2 R3 R4 接的 GPIO (BCM 編號)
 READY_PIN = 26                  # 手臂 DO → 這支腳; 拉高 = 請開始辨識
-INVERSE_LOGIC = False
+INVERSE_LOGIC = True
 
 try:
     import RPi.GPIO as GPIO
