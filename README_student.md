@@ -2,7 +2,7 @@
 
 所有指令都在終端機打（樹莓派：左上角黑色方框圖示或 Ctrl+Alt+T），先進到資料夾：
 ```
-cd ~/Desktop/contest2026_v10
+cd ~/Desktop/contest_2026_v10_TM
 ```
 
 ## 零、先弄清楚兩個通道
