@@ -1,0 +1,32 @@
+//===== 可調參數 =====
+
+float Z_SAFE = 50
+float RX = 180
+float RY = 0
+float RZ = 90
+int   SPD = 10
+int   ACC = 400
+
+//===== 1. 連線取得座標 =====
+
+Socket ntd_pc = "192.168.1.10", 5000, 5000
+socket_open("ntd_pc")
+
+socket_sendline("ntd_pc", "GET")
+string result = socket_read_string("ntd_pc", "$", newline, 1, 3000)
+
+string[] parts = String_Split(result, ",", 0)
+
+float px = String_ToFloat(parts[0], 10)
+float py = String_ToFloat(parts[1], 10)
+
+Display("Green", "White", "TARGET", GetString(px) + " , " + GetString(py))
+
+
+//===== 2. 移動到座標 =====
+
+float[] pAbove = {px, py, Z_SAFE, RX, RY, RZ}
+PTP("CPP", pAbove, SPD, ACC, 0, false)
+
+
+    
