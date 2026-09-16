@@ -4,8 +4,9 @@ main_contest.py —— 比賽主程式 (跑在樹莓派)
 兩個通道 (一句話: a 是「這是什麼顏色」, b 是「這個顏色在哪裡」):
   a 通道 (放置板):        手臂從放置板夾起指定物件、舉到鏡頭前 → 程式辨識顏色
                           → 用 IO 訊號告訴手臂是哪個顏色 → 手臂決定放到哪一區
-  b 通道 (隨機位置放置板): 程式開場拍快照, 算出每件物件的手臂座標 → 手臂送 GET
+  b 通道 (隨機位置放置板): 程式開場拍快照, 算出每件物件的手臂座標 → 手臂要下一件座標
                           → 程式照顏色順序回一件的座標 → 手臂去夾
+                          (手臂「怎麼要、怎麼收」由 arm_link.py 決定, 四家手臂各有一版; 本檔四家相同)
 
 賽前準備 (照順序):
   1. vision_tuner.py        調每個顏色的 HSV, 存進 vision_profiles.json
@@ -18,7 +19,7 @@ main_contest.py —— 比賽主程式 (跑在樹莓派)
   python3 main_contest.py --no-ui      正式比賽
   再加 --practice                      練習模式: PICK_ORDER 用完自動從頭再來
 
-啟動後先拍快照 (手臂勿在畫面內), 終端印出「階段二」之後才按手臂。
+啟動後先拍快照 (手臂勿在畫面內), 終端印出「階段二」(以及 arm_link 的連線訊息, 若有) 之後才按手臂。
 有畫面時的熱鍵: r = 重拍快照   c = 取用順序歸零   q = 離開
 """
 import time
@@ -34,7 +35,7 @@ from affine_transform import pixel_to_arm
 from pi_gpio_controller import PiGPIOController, IO_CODES
 
 # ======= 學生作答區: 隨機位置放置板上物件的夾取順序 (b 通道, 填顏色名) =======
-# 手臂每送一次 GET 就給下一個顏色; 同色兩件就寫兩次 (畫面由左到右給)。
+# 手臂每要一次座標就給下一個顏色; 同色兩件就寫兩次 (畫面由左到右給)。
 # 顏色名要和 vision_profiles.json 存的名稱一樣 (小寫)。
 PICK_ORDER = ["red", "blue", "green"]
 # ================================================================
@@ -90,7 +91,7 @@ class ChannelA:
 
 
 class ChannelB:
-    """b 通道 (隨機位置放置板): 開場拍一張快照算好每件的座標, 之後手臂送 GET 就查表回座標。"""
+    """b 通道 (隨機位置放置板): 開場拍一張快照算好每件的座標, 之後手臂每要一次座標 (arm_link 轉成 GET) 就查表回座標。"""
 
     def __init__(self, cap, profiles, practice):
         self.cap = cap
@@ -125,7 +126,7 @@ class ChannelB:
             s["served"] = False
 
     def handle(self, cmd):
-        """處理手臂的一句話, 回傳要回的字串。"""
+        """處理 arm_link 轉來的指令字, 回傳要回的回覆 (送到手臂的格式由 arm_link 決定)。"""
         if cmd == arm_link.CMD_GET:
             if self.order_i >= len(PICK_ORDER):
                 if not self.practice:
@@ -194,7 +195,7 @@ def main():
     try:
         print("[main] 階段一: 拍快照 (手臂勿在畫面內)")
         b.take_snapshot()
-        link.open()                                 # 快照完成才開始接受手臂連線
+        link.open()                                 # 快照完成才開始和手臂講話
         print(f"[main] === 階段二: 可以按手臂了 ({arm_link.HOST}:{arm_link.PORT})"
               + ("  [練習模式]" if args.practice else "") + " ===")
 
