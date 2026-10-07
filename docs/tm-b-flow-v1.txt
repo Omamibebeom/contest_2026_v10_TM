@@ -1,0 +1,35 @@
+//===== b 通道要座標 (可貼進 TMflow Script) =====
+// 樹莓派先到階段二, 且必須用「最新」arm_link.py (重開 main_contest)
+//
+// 回覆一律三段 (去掉 $ 後):
+//   有座標: B,487.5,0.0  → bp[1]=x, bp[2]=y
+//   沒有了: B,-1,-1      → 不要去夾, 用圖元判斷 px < 0
+//
+// 已 socket_open 過就刪掉下面宣告 + open 兩行。
+
+float Z_SAFE = 50
+float RX = 180
+float RY = 0
+float RZ = 90
+int   SPD = 10
+int   ACC = 400
+
+Socket ntd_pc = "192.168.1.10", 5000, 5000
+socket_open("ntd_pc")
+
+socket_sendline("ntd_pc", "GET")
+
+string b_result = socket_read_string("ntd_pc", "$", newline, 1, 8000)
+
+Display("Green", "White", "B_RAW", b_result)
+
+string[] bp = String_Split(b_result, ",", 0)
+
+float px = String_ToFloat(bp[1], 10)
+float py = String_ToFloat(bp[2], 10)
+
+Display("Green", "White", "TARGET", GetString(px) + " , " + GetString(py))
+
+//===== 移動 (若 px < 0 代表 NONE, 請用圖元 IF 跳過, 不要 PTP) =====
+float[] pAbove = {px, py, Z_SAFE, RX, RY, RZ}
+PTP("CPP", pAbove, SPD, ACC, 0, false)

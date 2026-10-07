@@ -1,0 +1,30 @@
+//===== a 通道讀顏色 (可直接貼進 TMflow Script 圖元) =====
+// 樹莓派須先跑到階段二: python3 main_contest.py --no-ui
+// 回覆格式: $A,<code>  →  read 吃掉前導 $ 後通常是 "A,1"
+// code: 1=red  2=blue  3=green  7=失敗
+//
+// 若專案開頭已經 socket_open 過同一個 ntd_pc:
+//   請刪掉下面「宣告 + open」兩行, 只留 A_REQ 以後, 避免重複連線。
+
+Socket ntd_pc = "192.168.1.10", 5000, 5000
+socket_open("ntd_pc")
+
+socket_sendline("ntd_pc", "A_REQ")
+
+string a_result = socket_read_string("ntd_pc", "$", newline, 1, 10000)
+
+Display("Green", "White", "A_RAW", a_result)
+
+string[] ap = String_Split(a_result, ",", 0)
+
+int color_code = String_ToInteger(ap[1], 10)
+
+Display("Green", "White", "COLOR", GetString(color_code))
+
+socket_sendline("ntd_pc", "A_DONE")
+
+//===== 接下來用圖元 IF =====
+// color_code == 1 → red 放置點
+// color_code == 2 → blue 放置點
+// color_code == 3 → green 放置點
+// color_code == 7 → 失敗處理

@@ -1,56 +1,71 @@
 """
-arm_link_test_tm.py —— 只測「手臂 ↔ 樹莓派」的通訊 (達明 TM 版, 廠商測機用)
+arm_link_test_tm.py —— 只測「手臂 ↔ 樹莓派」的通訊 (達明 TM Socket 版)
 
 跟比賽主程式的差別
-  不開相機、不讀 vision_profiles.json、不碰 GPIO、不做座標轉換。
-  只留下 arm_link.py (和比賽用的是同一支), 所以這裡測通的連線、句子結尾、
-  回覆格式, 比賽時完全一樣。
+  不開相機、不讀 vision_profiles.json、不做座標轉換。
+  使用同一支 arm_link.py (a/b 都走 Socket, 不接繼電器)。
 
-手臂送什麼 → 這支回什麼 (手臂送的句子以換行結尾; 回覆以 \r\n 結尾 = TMscript 的 newline)
-  GET       → $x,y      下面 FAKE_TARGETS 的下一個點, 用完自動從頭再來 (單位 mm)
+手臂送什麼 → 這支怎麼處理 (句子以換行結尾; 回覆以 \\r\\n 結尾 = TMscript newline)
+  GET       → $x,y      下面 FAKE_TARGETS 的下一個點 (單位 mm)
   SCAN      → $COUNT,n
   RESET     → $OK       並把取用順序歸零
   QUIT      → $BYE      並結束本程式
+  A_REQ     → (a 通道) ready=1, 本測試程式會回假顏色 $A,1; 正式比賽由 ChannelA 投票後再送
+  A_DONE    → (a 通道) ready=0
   其他      → $OK
 
 執行
   python3 arm_link_test_tm.py
-  (沒有手臂時, 另一台電腦可用  nc 192.168.1.10 5000  打 GET 模擬)
+  (沒有手臂時, 另一台電腦可用:  nc 192.168.1.10 5000  然後打 GET 或 A_REQ)
 
-賽前手臂端要先確認的兩件事
-  1. docs/tm-flow-v1.txt 的 Socket 宣告是 "192.168.1.10", 5000
+賽前確認
+  1. docs/tm-b-flow-v1.txt 的 Socket 宣告是 "192.168.1.10", 5000
   2. 樹莓派有線網卡 IP 設成 192.168.1.10/24
+  3. 不需要接 GPIO / 繼電器
 
 注意
-  手臂 script 收到座標會真的移動, FAKE_TARGETS 請填這台手臂上安全可達的點。
+  手臂 script 收到座標會真的移動, FAKE_TARGETS 請填安全可達的點。
 """
 import time
 
 import arm_link
+from pi_gpio_controller import PiGPIOController
 
 # ======= 測試用假座標 (單位 mm, 手臂座標系) =======
-# 這裡只驗通訊, 座標本身不需要準; 但手臂會真的移動過去, 務必填安全的點。
 FAKE_TARGETS = [
     (300.0, 0.0),
     (300.0, 60.0),
     (300.0, -60.0),
 ]
+# 測試用假顏色代碼 (對應預設 IO_CODES: red=1 blue=2 green=3)
+FAKE_A_CODE = 1
 # ================================================
 
 
 def main():
+    gpio = PiGPIOController()          # 已由 arm_link patch 成 Socket 版
     link = arm_link.ArmLink()
     link.open()
     print(f"[測試] 開始等手臂連線: {arm_link.HOST}:{arm_link.PORT}")
-    print(f"[測試] 假座標共 {len(FAKE_TARGETS)} 個, 用完會從頭再來")
+    print(f"[測試] 假座標共 {len(FAKE_TARGETS)} 個; A_REQ 會回 $A,{FAKE_A_CODE}")
     print("[測試] Ctrl+C 離開\n")
 
-    i = 0                                   # 下一次 GET 要給第幾個假座標 (RESET 會歸零)
-    total = 0                               # 這次總共給了幾組 (只增不減, 結尾統計用)
+    i = 0
+    total = 0
+    a_replied = False                   # 這一輪 A_REQ 是否已回過假顏色
     running = True
     try:
         while running:
-            for cmd in link.poll():         # 收這一圈手臂送來的句子 (arm_link 已去掉換行、轉大寫)
+            ready = gpio.ready()        # 內部會泵 Socket; A_REQ/A_DONE 在這裡消化
+            if ready == 1 and not a_replied:
+                reply = arm_link.reply_a(FAKE_A_CODE)
+                link.send(reply)
+                print(f"[a] ready=1 → 回覆 {reply}")
+                a_replied = True
+            elif ready == 0:
+                a_replied = False
+
+            for cmd in link.poll():
                 print(f"[收到] {cmd}")
 
                 if cmd == arm_link.CMD_GET:
@@ -71,17 +86,18 @@ def main():
                     reply = arm_link.REPLY_BYE
                     running = False
 
-                else:                       # GRIP / RELEASE / 打錯字都回 ack
+                else:
                     reply = arm_link.REPLY_OK
 
                 link.send(reply)
                 print(f"[回覆] {reply}")
 
-            time.sleep(0.01)                # 沒事做時稍微讓一下 CPU
+            time.sleep(0.01)
     except KeyboardInterrupt:
         print("\n[測試] 手動結束")
     finally:
         link.close()
+        gpio.cleanup()
         print(f"[測試] 已關閉, 這次共給了 {total} 組座標")
 
 
