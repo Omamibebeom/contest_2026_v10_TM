@@ -1,11 +1,19 @@
-//===== b 通道要座標 (可貼進 TMflow Script) =====
-// 樹莓派先到階段二, 且必須用「最新」arm_link.py (重開 main_contest)
+//===== b 通道要座標 (可貼進 TMflow Script 圖元) =====
+// 樹莓派須先到階段二, 且用最新 arm_link.py
 //
-// 回覆一律三段 (去掉 $ 後):
-//   有座標: B,487.5,0.0  → bp[1]=x, bp[2]=y
-//   沒有了: B,-1,-1      → 不要去夾, 用圖元判斷 px < 0
+// 【重要】Script 節點內的區域變數離開圖元就會消失。
+// 若後面要用圖元移動 / 判斷, 請先在 TMflow「變數管理員」新增全域變數
+// (名稱會自動帶 var_ 前綴, 建立時填 b_raw / px / py 即可):
+//   var_b_raw   string
+//   var_px      float
+//   var_py      float
+// 本 Script 寫入這三個全域變數 (不要用 float var_px = ... 宣告成區域變數)。
 //
-// 已 socket_open 過就刪掉下面宣告 + open 兩行。
+// 回覆 (去掉 $ 後):
+//   有座標: B,487.5,0.0  → var_px, var_py
+//   沒有了: B,-1,-1      → 後面圖元判斷 var_px < 0 就不要去夾
+//
+// 進入本 Script 才連線。若重複 open 報錯, 刪掉下面宣告 + open 兩行。
 
 float Z_SAFE = 50
 float RX = 180
@@ -19,17 +27,24 @@ socket_open("ntd_pc")
 
 socket_sendline("ntd_pc", "GET")
 
-string b_result = socket_read_string("ntd_pc", "$", newline, 1, 8000)
+string tmp_b = socket_read_string("ntd_pc", "$", newline, 1, 8000)
 
-Display("Green", "White", "B_RAW", b_result)
+// 寫入全域變數 (須已在變數管理員建立)
+var_b_raw = tmp_b
 
-string[] bp = String_Split(b_result, ",", 0)
+Display("Green", "White", "B_RAW", var_b_raw)
 
-float px = String_ToFloat(bp[1], 10)
-float py = String_ToFloat(bp[2], 10)
+string[] bp = String_Split(var_b_raw, ",", 0)
 
-Display("Green", "White", "TARGET", GetString(px) + " , " + GetString(py))
+var_px = String_ToFloat(bp[1], 10)
+var_py = String_ToFloat(bp[2], 10)
 
-//===== 移動 (若 px < 0 代表 NONE, 請用圖元 IF 跳過, 不要 PTP) =====
-float[] pAbove = {px, py, Z_SAFE, RX, RY, RZ}
+Display("Green", "White", "TARGET", GetString(var_px) + " , " + GetString(var_py))
+
+//===== 可選: 仍在本 Script 內移動 (也會用到全域 var_px, var_py) =====
+// 若改成外面圖元 PTP, 可刪掉下面兩行, 改在 Flow 用 var_px / var_py
+float[] pAbove = {var_px, var_py, Z_SAFE, RX, RY, RZ}
 PTP("CPP", pAbove, SPD, ACC, 0, false)
+
+//===== Script 結束後, 後面圖元可直接用全域變數 var_px, var_py, var_b_raw =====
+// IF var_px < 0 → 沒有下一件, 跳過夾取

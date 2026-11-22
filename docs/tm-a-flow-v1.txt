@@ -1,30 +1,40 @@
-//===== a 通道讀顏色 (可直接貼進 TMflow Script 圖元) =====
-// 樹莓派須先跑到階段二: python3 main_contest.py --no-ui
-// 回覆格式: $A,<code>  →  read 吃掉前導 $ 後通常是 "A,1"
+//===== a 通道讀顏色 (可貼進 TMflow Script 圖元) =====
+// 樹莓派須先到階段二: python3 main_contest.py --no-ui
+//
+// 【重要】Script 節點內的區域變數離開圖元就會消失。
+// 若後面要用圖元 IF 分支, 請先在 TMflow「變數管理員」新增全域變數
+// (名稱會自動帶 var_ 前綴, 建立時填 a_raw / color_code 即可):
+//   var_a_raw        string
+//   var_color_code   int
+// 本 Script 只「寫入」這兩個全域變數 (不要再寫 int var_color_code = ..., 那會變成區域變數)。
+//
+// 回覆: $A,<code> → 讀完通常是 "A,1"
 // code: 1=red  2=blue  3=green  7=失敗
 //
-// 若專案開頭已經 socket_open 過同一個 ntd_pc:
-//   請刪掉下面「宣告 + open」兩行, 只留 A_REQ 以後, 避免重複連線。
+// 進入本 Script 才連線。若重複 open 報錯, 刪掉下面宣告 + open 兩行。
 
 Socket ntd_pc = "192.168.1.10", 5000, 5000
 socket_open("ntd_pc")
 
 socket_sendline("ntd_pc", "A_REQ")
 
-string a_result = socket_read_string("ntd_pc", "$", newline, 1, 10000)
+string tmp_a = socket_read_string("ntd_pc", "$", newline, 1, 10000)
 
-Display("Green", "White", "A_RAW", a_result)
+// 寫入全域變數 (須已在變數管理員建立)
+var_a_raw = tmp_a
 
-string[] ap = String_Split(a_result, ",", 0)
+Display("Green", "White", "A_RAW", var_a_raw)
 
-int color_code = String_ToInteger(ap[1], 10)
+string[] ap = String_Split(var_a_raw, ",", 0)
 
-Display("Green", "White", "COLOR", GetString(color_code))
+var_color_code = String_ToInteger(ap[1], 10)
+
+Display("Green", "White", "COLOR", GetString(var_color_code))
 
 socket_sendline("ntd_pc", "A_DONE")
 
-//===== 接下來用圖元 IF =====
-// color_code == 1 → red 放置點
-// color_code == 2 → blue 放置點
-// color_code == 3 → green 放置點
-// color_code == 7 → 失敗處理
+//===== Script 結束後, 後面圖元可直接用全域變數 var_color_code =====
+// IF var_color_code == 1 → red 放置點
+// IF var_color_code == 2 → blue 放置點
+// IF var_color_code == 3 → green 放置點
+// IF var_color_code == 7 → 失敗處理
